@@ -1,7 +1,7 @@
 const fs = require("fs");
 
-class Data{
-    constructor(students, courses){
+class Data {
+    constructor(students, courses) {
         this.students = students;
         this.courses = courses;
     }
@@ -10,15 +10,16 @@ class Data{
 let dataCollection = null;
 
 module.exports.initialize = function () {
-    return new Promise( (resolve, reject) => {
-        fs.readFile('./data/courses.json','utf8', (err, courseData) => {
+    return new Promise((resolve, reject) => {
+        fs.readFile('./data/courses.json', 'utf8', (err, courseData) => {
             if (err) {
-                reject("unable to load courses"); return;
+                reject("Unable to load courses");
+                return;
             }
-
-            fs.readFile('./data/students.json','utf8', (err, studentData) => {
+                fs.readFile('./data/students.json', 'utf8', (err, studentData) => {
                 if (err) {
-                    reject("unable to load students"); return;
+                    reject("Unable to load students");
+                    return;
                 }
 
                 dataCollection = new Data(JSON.parse(studentData), JSON.parse(courseData));
@@ -28,74 +29,108 @@ module.exports.initialize = function () {
     });
 }
 
-module.exports.getAllStudents = function(){
-    return new Promise((resolve,reject)=>{
+module.exports.getAllStudents = function () {
+    return new Promise((resolve, reject) => {
         if (dataCollection.students.length == 0) {
-            reject("query returned 0 results"); return;
+            reject("Query returned 0 results");
+            return;
         }
 
         resolve(dataCollection.students);
     })
 }
 
-module.exports.getTAs = function () {
-    return new Promise(function (resolve, reject) {
-        var filteredStudents = [];
+ module.exports.getTAs = function () {
+     return new Promise((resolve, reject) => {
+         const filteredStudents = dataCollection.students.filter(student => student.TA === true);
+         if (filteredStudents.length == 0) {
+            reject("Query returned 0 results");
+             return;
+         }
 
-        for (let i = 0; i < dataCollection.students.length; i++) {
-            if (dataCollection.students[i].TA == true) {
-                filteredStudents.push(dataCollection.students[i]);
-            }
+         resolve(filteredStudents);
+     });
+ };
+
+module.exports.getCourses = function () {
+    return new Promise((resolve, reject) => {
+        if (dataCollection.courses.length == 0) {
+            reject("Query returned 0 results");
+            return;
         }
 
-        if (filteredStudents.length == 0) {
-            reject("query returned 0 results"); return;
-        }
-
-        resolve(filteredStudents);
+        resolve(dataCollection.courses);
     });
 };
 
-module.exports.getCourses = function(){
-   return new Promise((resolve,reject)=>{
-    if (dataCollection.courses.length == 0) {
-        reject("query returned 0 results"); return;
-    }
-
-    resolve(dataCollection.courses);
-   });
-};
-
 module.exports.getStudentByNum = function (num) {
-    return new Promise(function (resolve, reject) {
-        var foundStudent = null;
-
-        for (let i = 0; i < dataCollection.students.length; i++) {
-            if (dataCollection.students[i].studentNum == num) {
-                foundStudent = dataCollection.students[i];
-            }
-        }
+    return new Promise((resolve, reject) => {
+        const foundStudent = dataCollection.students.find(student => student.studentNum == num);
 
         if (!foundStudent) {
-            reject("query returned 0 results"); return;
+            reject("No student found with the given number");
+            return;
         }
 
         resolve(foundStudent);
     });
 };
 
-module.exports.getStudentsByCourse = function (course) {
-    return new Promise(function (resolve, reject) {
-        var filteredStudents = [];
-
-        for (let i = 0; i < dataCollection.students.length; i++) {
-            if (dataCollection.students[i].course == course) {
-                filteredStudents.push(dataCollection.students[i]);
-            }
+module.exports.updateStudent = function (studentData) {
+    console.log("here is the studentData: ", studentData)
+    return new Promise((resolve, reject) => {
+        const index = dataCollection.students.findIndex(student => student.studentNum == Number(studentData.studentNum));
+        if(studentData.TA == undefined || studentData.TA == null)
+        {
+            studentData.TA = false;
+        }
+        else
+        {
+            studentData.TA = true
+        }
+        studentData.course = Number(studentData.course)
+        studentData.studentNum = Number(studentData.studentNum) 
+        if (index !== -1) {
+            
+            console.log("here is the last updated studentData: ", studentData)
+            dataCollection.students[index] = studentData;
+        }
+        else{
+            reject("No student found with the given number");
+            return;
         }
 
+        resolve();
+    });
+};
+
+module.exports.getCourseById = function (id) {
+    return new Promise(function (resolve, reject) {
+      Course.findAll({
+        where: {
+          courseId: id
+        }
+      })
+      .then((courses) => {
+        if (courses.length > 0) {
+          resolve(courses[0]);
+        } else {
+          reject("No results returned");
+        }
+      })
+      .catch((err) => {
+        reject("Error retrieving course by ID: " + err);
+      });
+    });
+  };
+
+module.exports.getStudentsByCourse = function (course) {
+    return new Promise((resolve, reject) => {
+        const filteredStudents = dataCollection.students.filter(student => student.course == course);
+
         if (filteredStudents.length == 0) {
-            reject("query returned 0 results"); return;
+            reject("No students found for the given course");
+            return;
         }
 
         resolve(filteredStudents);
@@ -104,12 +139,17 @@ module.exports.getStudentsByCourse = function (course) {
 
 module.exports.addStudent = function (studentData) {
     return new Promise(function (resolve, reject) {
-
-        studentData.TA = (studentData.TA) ? true : false;
-        studentData.studentNum = dataCollection.students.length + 1;
-        dataCollection.students.push(studentData);
-
-        resolve();
+        if(studentData.TA == undefined || studentData.TA == null)
+        {
+            studentData.TA = false;
+        }
+        else
+        {
+            studentData.TA = true
+        }
+        studentData.studentNum = dataCollection.students.length + 1
+        studentData.course = Number(studentData.course)
+        dataCollection.students.push(studentData)
+        resolve(dataCollection.students)
     });
-
-};
+}

@@ -29,13 +29,13 @@ body, html{ /* from: https://coderwall.com/p/ape0jg/full-page-gradient-backgroun
 }
 
 .btn-primary{
-    background-color: #6cc8e2;
+    background-color: #6cd2e2;
     border-color: #3b396f;
 }
 
 .btn-primary:hover{
     background-color: #a5b976;
-    border-color: #81aebe;
+    border-color: #8381be;
 }
 
 /* table style */
